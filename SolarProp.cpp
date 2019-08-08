@@ -1100,6 +1100,7 @@ void rainParticles(void)
 	firstParticle = particlesToInsert.at(0);
 	while (yToInsert < 119&&!particlesToInsert.empty())
 	{
+		//printf("y to insert : %e \n", yToInsert);
 		firstParticle = particlesToInsert.at(0);
 		index = particlesToInsert.at(0);
 		particle[index].y = yToInsert;
@@ -1296,7 +1297,7 @@ moving boundaries.
 	//if (timeAfterInsert >= 13300 && particlesToInsert.size() >= n)
 	//&& particlesToInsert.size() >= n
 	//particle[firstParticle].y <= 109
-	if (maxY<=120-windowHeight-.5&& particlesToInsert.size() >= n)
+	if (maxY<=120-windowHeight-1.05&& particlesToInsert.size() >= n)
 	{
 		printf("Free Surface: %f, maxY: %f \n", FreeSurface, maxY);
 		rainParticles();
@@ -1488,7 +1489,7 @@ the simulation
 	qSum2Sum = 0;
 	qSum1Sum = 0;
 //	N *= (int)x_width;
-	N = 800;
+	N = 600;
 	// make room for *particle
 	printf("%d bytes required for *particle.\n", (N + wall_num + 1) * sizeof(struct state));
 	if ((particle = (struct state *) calloc(N + wall_num + 1, sizeof(struct state))) == NULL)
