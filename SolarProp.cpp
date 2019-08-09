@@ -96,7 +96,7 @@ using namespace std;
 //constant taken taken at 1000K air from page 995 of "principles of heat and mass transfer, Bergman"
 #define v .0001219
 
-#define windowHeight 20
+#define windowHeight 40
 
 #define k_ratio (100/401)
 
@@ -663,6 +663,10 @@ void changeTemperatures(void)
 
 		if (particle[i].particleTemperature > 1 || particle[i].particleTemperature < 0)
 			printf("particleTemperature %.3f \n", particle[i].particleTemperature);
+
+		if (particle[i].particleTemperature  > 0)
+			printf("particleTemperature %.3f \n", particle[i].particleTemperature);
+
 	}
 }
 double deltaT(int i, int j)
@@ -992,7 +996,7 @@ calculates the forces acting on them
 			printf("Dx: %e, Dy: %e, Y1: %e , Y2: %e X1: %e , X2: %e  \n", dx, dy, particle[j].y, particle[i].y, particle[j].x, particle[i].x);
 		}
 
-		// determine the direction vectors for the contact
+		// determine the direction vectors for the contact20
 		nx = dx / dij;
 		ny = dy / dij;
 		sx = -ny;
@@ -1097,7 +1101,7 @@ void rainParticles(void)
 	printf("raining %d \n", size);
 	particlesInserted = 0;
 
-	yToInsert = 120-windowHeight;
+	yToInsert = y_width - windowHeight;
 	particlesInserted = 0;
 	firstParticle = particlesToInsert.at(0);
 	while (yToInsert < 119&&!particlesToInsert.empty())
@@ -1205,7 +1209,7 @@ moving boundaries.
 		if (particle[i].y > maxY)
 			maxY = particle[i].y;
 
-		if (particle[i].y <= 100-windowHeight&&!particle[i].rain)
+		if (particle[i].y <= y_width - 2*windowHeight &&!particle[i].rain)
 		{
 			particlesToInsert.push_back(i);
 			particle[i].rain = true;
@@ -1237,9 +1241,10 @@ moving boundaries.
 			remove_from_cell(particle[i].cellx, particle[i].celly, i);
 			add_to_cell(cellx, celly, i);
 		}
+
 	}
 
-	if (maxY<=120-windowHeight-1.05&& particlesToInsert.size() >= n)
+	if (maxY <= y_width-windowHeight-1.05&& particlesToInsert.size() >= n)
 	{
 		printf("Free Surface: %f, maxY: %f \n", FreeSurface, maxY);
 		rainParticles();
@@ -1257,7 +1262,7 @@ double calculateConvection(int particleIndex)
 		heatTransferCoef,
 		reynoldsNumber, C, M, q;
 
-	if (particle[particleIndex].y < 120 - windowHeight && particle[particleIndex].y > 120 - 2 * windowHeight) {
+	if (particle[particleIndex].y < y_width - windowHeight && particle[particleIndex].y > y_width - 2 * windowHeight) {
 		//d is assumed to be 1
 		reynoldsNumber = calculateVelo(particleIndex) / v;
 		C = getC(reynoldsNumber);
