@@ -98,6 +98,11 @@ using namespace std;
 
 #define windowHeight 20
 
+#define k_ratio (100/401)
+
+#define airTemp 1
+
+
 /*
 The data structure for all particles in the simulations:
 num: the particle identifying number (between 1 and N where N is the total
@@ -462,6 +467,7 @@ to actually do the calculations for the forces
 	void particle_forces(int i, int j, double pj_dx);
 	void changeTemperatures(void);
 	void makeQZero(void);
+	void allParticlesConvection(void);
 
 	int
 		i,
@@ -630,6 +636,8 @@ to actually do the calculations for the forces
 			}
 		}
 	}
+
+	allParticlesConvection();
 	//for each particle, we want to find the Q* for each particle interacting with a particle, then adjust heat. Next we want to find dT/dt
 	changeTemperatures();
 	Pout = Pout / SensorSize;
@@ -638,6 +646,19 @@ to actually do the calculations for the forces
 	Pin2 = Pin2 / SensorSize;
 	//makeQZero();
 }
+
+
+void allParticlesConvection(void)
+{
+	float calculateConvection(int i);
+
+	for (int i = 0; i <= N; i++)
+	{
+		particle[i].qSum += calculateConvection(i);
+	}
+}
+
+
 void changeTemperatures(void)
 {
 	int tid;
@@ -1012,6 +1033,9 @@ calculates the forces acting on them
 		particle[i].Fy += fnmag * ny;
 		particle[j].Fx -= fnmag * nx;
 		particle[j].Fy -= fnmag * ny;
+
+
+
 		/*
 		deltaTemp = deltaT(i, j);
 
@@ -1205,69 +1229,15 @@ moving boundaries.
 		if (particle[i].y > maxY)
 			maxY = particle[i].y;
 
-
-		//&&particlesIns&&particlesInsert
-		//(particle[i].y <= 30 && particleF < x_width - 1 && particlesInserted < 2 * n)
 		if (particle[i].y <= 100-windowHeight&&!particle[i].rain)
 		{
 			particlesToInsert.push_back(i);
-		//	printf("added \n");
-			//printf("size of particles %d \n", particlesToInsert.size());
 			particle[i].rain = true;
-		//	particle[i].ydot = 0;
-			//particle[i].y = 2;
-			//particle[i].particleTemperature = 0;
+		}		
+		else {
+			particle[i].y += particle[i].ydot*deltat;
 		}
-				//if (particlesInserted <300)
-				//particlesToInsert += 1;
-
-				
-
-				// n * 8 / 1.1
-				
-				/*
-				particle[i].x = deltan * (xToInsert - 0.5);
-				particle[i].ydot = 0;
-				particle[i].xdot = 0;
-				//particle[i].thetazdot = 0;
-				//particle[i].x = particleF;
-				xToInsert++;
-				//yToInsert++;
-				xcounter++;
-				particlesInserted++;
-				if (xcounter > n)
-					xcounter = 1;
-
-				if (xToInsert > n)
-				{
-					xToInsert = 1;
-					if (up)
-						yToInsert += 1.1;
-					else
-						yToInsert -= 1.1;
-				}
-				if (yToInsert > 30 / 1.1 || yToInsert < 0)
-					//yToInsert = 0;
-					up = !up;
-
-				particle[i].xdot = 2 * v0max*(0.5 - (double)rand() / (double)RAND_MAX);
-				*/
-
-		//	}
-			//particle[i].ydot = (particle[i].Fy / particle[i].m)*deltat;
-	//	particle[i].ydot = 2 * v0max*(0.5 - (double)rand() / (double)RAND_MAX);
-		//	particle[i].thetazdot = 0.0;
-			// put the particles in the proper cells
-		//	cellx = (int)(particle[i].x / cellsize) + 1;
-			//celly = (int)((particle[i].y - particle[N + 1].y) / cellsize) + 1;
-		//	add_to_cell(cellx, celly, i);
-
-			//particleF++;
 		
-		else
-		particle[i].y += particle[i].ydot*deltat;
-		
-
 		particle[i].thetaz += particle[i].thetazdot*deltat;
 
 		// keep rotational position between 0 and 2*PI
@@ -1305,7 +1275,7 @@ moving boundaries.
 }
 
 
-double calculateConvection(int particle)
+double calculateConvection(int particleIndex)
 {
 	double calculateVelo(int);
 	double getC(double);
@@ -1313,15 +1283,21 @@ double calculateConvection(int particle)
 	double
 		nu,
 		heatTransferCoef,
-		reynoldsNumber, C,M;
+		reynoldsNumber, C, M, q;
 
-	//d is assumed to be 1
-	reynoldsNumber = calculateVelo(particle) / v;
-	C = getC(reynoldsNumber);
-	M = getM(reynoldsNumber);
-	nu = C * pow(reynoldsNumber, M)*pow(Pr, (float)1 / 3);
+	if (particle[particleIndex].y < 120 - windowHeight && particle[particleIndex].y > 120 - 2 * windowHeight) {
+		//d is assumed to be 1
+		reynoldsNumber = calculateVelo(particleIndex) / v;
+		C = getC(reynoldsNumber);
+		M = getM(reynoldsNumber);
+		nu = C * pow(reynoldsNumber, M)*pow(Pr, (float)1 / 3);
+		q = nu * k_ratio * 2 * PI*0.5*(airTemp - particle[particleIndex].particleTemperature);
+	}	
+	else {
+		q = 0;
+	}
 //	heatTransferCoe
-	return 0;
+	return q;
 }
 
 //from the table 2 on page 458, used to caluclate nusselts number
@@ -1489,7 +1465,7 @@ the simulation
 	qSum2Sum = 0;
 	qSum1Sum = 0;
 //	N *= (int)x_width;
-	N = 600;
+	N = 1000;
 	// make room for *particle
 	printf("%d bytes required for *particle.\n", (N + wall_num + 1) * sizeof(struct state));
 	if ((particle = (struct state *) calloc(N + wall_num + 1, sizeof(struct state))) == NULL)
