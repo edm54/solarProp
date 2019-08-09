@@ -413,8 +413,6 @@ int main(int argc, char **argv)
 	} while (t < tmax);
 	calculate_forces(outfile);
 	record_states(outfile);
-	//makeQZero1();
-	//RecordStatesAll(outfile,Directory);
 	printf("cycles = %.3f (%.1f%%)\n", w*t / (2.0*PI), 100.0*t / tmax);
 
 	// close the output file
@@ -455,7 +453,6 @@ void makeQZero1(void)
 	}
 }
 void calculate_forces(FILE *outfile)
-//x_wall_forces(int i, int j, FILE *outfile)
 /*
 This routine initializes the particle forces with the gravity force and
 then determines which particles could be in contact.  It calls other routines
@@ -500,7 +497,6 @@ to actually do the calculations for the forces
 	makeQZero();
 	int tid;
 	// initialize particle forces with gravity force
-//#pragma omp parallel for private(tid) num_threads(8)
 
 	#pragma omp parallel for private(tid) num_threads(4)
 	for (i = 1;i <= N;i++)
@@ -582,14 +578,12 @@ to actually do the calculations for the forces
 	// check for interparticle collisions
 	//was N-1
 	int nthreads;
-	#pragma omp parallel for  private(tid,cellx,celly,particlej,x,y,x_wall_flag) num_threads(4) //stacksize(10000)
-	//#pragma acc parallel  private(tid,cellx,celly,particlej,x,y,x_wall_flag) 
-	//#pragma acc kernels private(tid,cellx,celly,particlej,x,y,x_wall_flag) 
+	#pragma omp parallel for private(tid,cellx,celly,particlej,x,y,x_wall_flag) num_threads(4) //stacksize(10000)
 	for (int i = 1;i <= N;i++)
 	{
 		cellx = particle[i].cellx;
 		celly = particle[i].celly;
-		//  check for collisions with cells around and including current cell
+		// Check for collisions with cells around and including current cell
 		for (x = cellx - 1;x <= cellx + 1;x++)
 		{
 			for (y = celly - 1;y <= celly + 1;y++)
@@ -644,14 +638,13 @@ to actually do the calculations for the forces
 	Pout2 = Pout2 / SensorSize;
 	Pin = Pin / SensorSize;
 	Pin2 = Pin2 / SensorSize;
-	//makeQZero();
+	makeQZero();
 }
 
 
 void allParticlesConvection(void)
 {
 	float calculateConvection(int i);
-
 	for (int i = 0; i <= N; i++)
 	{
 		particle[i].qSum += calculateConvection(i);
@@ -664,18 +657,8 @@ void changeTemperatures(void)
 	int tid;
 
 	#pragma omp parallel for private(tid) num_threads(4)
-	//#pragma acc kernels
 	for (int i = 0;i <= N;i++)
 	{
-
-		/*if (i == 86)
-		{
-
-			printf("Qsum of 86: Q: %.5f, \n", particle[i].qSum);
-
-		}
-		*/
-
 		particle[i].particleTemperature += (3 * particle[i].qSum*deltat*dtConstant) / (4 * PI*pow(0.5, 3));
 
 		if (particle[i].particleTemperature > 1 || particle[i].particleTemperature < 0)
@@ -742,8 +725,6 @@ the particle
 			printf("\toverlap/rmin=%.3e\n", overlap / rmin);
 		}
 		
-
-		//printf("Particle i in x: %d\n", i);
 		qOne = 0;
 		qTwo = 0;
 		// determine the direction vectors for the contact
@@ -797,7 +778,6 @@ the particle
 		// contact or if it is a new contact
 		// go through the contact list
 		k = 1;
-		//k = 0;
 		while ((particle[i].contact[k] != j) && (k <= CONTACT_MAX))
 			k++;
 		if (k <= CONTACT_MAX)  // this is an old contact
@@ -1005,7 +985,6 @@ calculates the forces acting on them
 	//  contact forces
 	if (overlap >= 0.0)              // check for contact
 	{
-
 		if (overlap / rmin > MAX_OVERLAP)     // check for too much overlap
 		{
 			printf("WARNING: t=%.3e sec\t%d/%d", t, i, j);
@@ -1033,7 +1012,6 @@ calculates the forces acting on them
 		particle[i].Fy += fnmag * ny;
 		particle[j].Fx -= fnmag * nx;
 		particle[j].Fy -= fnmag * ny;
-
 
 
 		/*
@@ -1130,8 +1108,6 @@ void rainParticles(void)
 		particle[index].y = yToInsert;
 		particle[index].ydot = 0;
 		particle[index].xdot = 2 * v0max*(0.5 - (double)rand() / (double)RAND_MAX);
-		//	particle[i].ydot = -0.5 * v0max*(0.5 - (double)rand() / (double)RAND_MAX);
-			//particle[index].xdot = 0;
 		particle[index].x = deltan * (particlesInserted + 0.5);
 		particlesToInsert.erase(particlesToInsert.begin() + 0);
 		particle[index].rain = false;
@@ -1239,7 +1215,6 @@ moving boundaries.
 		}
 		
 		particle[i].thetaz += particle[i].thetazdot*deltat;
-
 		// keep rotational position between 0 and 2*PI
 		if (particle[i].thetaz > 2.0*PI)
 			particle[i].thetaz = particle[i].thetaz - 2.0*PI*(int)((particle[i].thetaz) / (2.0*PI));
@@ -1264,9 +1239,6 @@ moving boundaries.
 		}
 	}
 
-	//if (timeAfterInsert >= 13300 && particlesToInsert.size() >= n)
-	//&& particlesToInsert.size() >= n
-	//particle[firstParticle].y <= 109
 	if (maxY<=120-windowHeight-1.05&& particlesToInsert.size() >= n)
 	{
 		printf("Free Surface: %f, maxY: %f \n", FreeSurface, maxY);
@@ -1296,7 +1268,6 @@ double calculateConvection(int particleIndex)
 	else {
 		q = 0;
 	}
-//	heatTransferCoe
 	return q;
 }
 
@@ -1559,7 +1530,6 @@ the simulation
 	t_psamp_recordstates = 0.0;
 	deltat_psamp_recordstates = 1 / samps_per_second;
 
-
 	// make room for the cell list pointers; NOTE: the cellsize is just larger
 	// than the maximum particle diameter,dmax
 	cellmax_x = (int)(x_width / dmax) + 1;
@@ -1676,8 +1646,6 @@ Wall assigned 100 degrees
 		particle[i].thetazdot = 0.0;
 		particle[i].r = 0.0;
 		particle[i].num = i;
-		//youngModulus of wall-could be different that particle
-		//particle[i].youngModulus = 117;
 		particle[i].particleTemperature = 1.0;
 	}
 	//Left wall is heated
@@ -1705,7 +1673,6 @@ Wall assigned 100 degrees
 	// intialize particle states
 	srand((unsigned)time(NULL));
 	n = (int)(x_width / (1.05*dmax));
-	//printf("nnnnnnn: %d", n);
 	deltan = x_width / (double)(n);
 	xcounter = 1;
 	for (i = 1;i <= N;i++)
@@ -1904,23 +1871,7 @@ the experiment from a previously settled case.
 	fclose(soutfile);
 	printf("Done\n");
 }
-/*
-void printToExcel()
-{
-	ofstream outdata;
-	outdata.open("output.csv");
-	for (int i = 1;i <= N;i++)
-	{
-		//tmax / deltat
-		for (int x = 0;x <10 ;x++)
-		{
-			outdata << ", " << particle[i].temperatures[x];
-		}
-		outdata << endl;
-	}
-	//outdata << "1,1,1" << endl;
-}
-*/
+
 void MovePiston(int ExcitationFlag)
 /*
 This routine updates the location of the piston.
